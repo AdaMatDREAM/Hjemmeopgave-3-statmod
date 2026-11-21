@@ -1,3 +1,4 @@
+#### Opgave A 1 ####
 # Indlæser data
 data(UCBAdmissions)
 ucb <- as.data.frame(UCBAdmissions)
@@ -26,6 +27,23 @@ fit_veksel  <- glm(Freq ~ Admit + Gender + Admit*Gender, data = ucb_AG, family =
 
 # Likelihood rator for om der er en vekselvirkning
 anova(fit_additiv, fit_veksel, test = "LRT")
+
+#### Opgave A 2 ####
+
+# Fit modelen
+fit_ucb <- glm(Freq ~ Admit + Gender + Dept + Admit*Dept + Gender*Dept, data = ucb, family = poisson) 
+fit_ucb <- glm(Freq ~ Admit + Gender + Dept + Admit:Dept + Gender:Dept, data = ucb, family = poisson) 
+fit_ucb <- glm(Freq ~ Admit*Dept + Gender*Dept, data = ucb, family = poisson) 
+
+
+
+
+
+
+
+
+
+
 
 
 
