@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Statmod Tutor</title>
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$']] },
+    chtml: { scale: 1.02 }
+  };
+</script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #07111f;
+    --bg-2: #0b1a2e;
+    --panel: #0f2240;
+    --panel-2: #132a4e;
+    --line: #1f3a64;
+    --text: #dbe6f5;
+    --muted: #8ea6c6;
+    --accent: #4da3ff;
+    --accent-2: #7cc4ff;
+    --good: #5fd3a6;
+    --warn: #ffc56b;
+    --user: #1b3a6b;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: radial-gradient(1200px 600px at 80% -10%, #12305a 0%, transparent 60%), var(--bg);
+    color: var(--text);
+    font: 16px/1.65 Inter, system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(7, 17, 31, .85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .bar { max-width: 920px; margin: 0 auto; padding: 14px 16px 0; }
+  .brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .brand h1 { font-size: 1.15rem; margin: 0; letter-spacing: .3px; }
+  .brand span { color: var(--muted); font-size: .85rem; }
+  .tabs { display: flex; gap: 4px; margin-top: 12px; overflow-x: auto; }
+  .tab {
+    background: transparent; color: var(--muted); border: 1px solid transparent;
+    border-bottom: none; padding: 8px 14px; border-radius: 10px 10px 0 0;
+    font: inherit; font-size: .9rem; cursor: pointer; white-space: nowrap;
+  }
+  .tab.active { background: var(--panel); color: var(--text); border-color: var(--line); }
+  main { max-width: 920px; margin: 0 auto; padding: 24px 16px 80px; }
+  .conv { display: none; }
+  .conv.active { display: block; }
+
+  .msg { margin: 0 0 22px; }
+  .msg .who { font-size: .75rem; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); margin-bottom: 6px; }
+  .msg.user .bubble {
+    background: var(--user); border: 1px solid #2a5294; border-radius: 14px 14px 4px 14px;
+    padding: 12px 16px; margin-left: auto; max-width: 85%;
+  }
+  .msg.user .who { text-align: right; }
+  .msg.ai .bubble {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 6px 22px 18px;
+  }
+  h2 { font-size: 1.25rem; margin: 22px 0 6px; color: var(--accent-2); }
+  h3 { font-size: 1.02rem; margin: 18px 0 4px; color: var(--text); }
+  .sec { border-top: 1px solid var(--line); margin-top: 22px; padding-top: 4px; }
+  .sec:first-of-type { border-top: none; }
+  .num { display: inline-block; min-width: 28px; color: var(--accent); font-weight: 700; }
+  p { margin: 8px 0; }
+  ul { margin: 6px 0; padding-left: 22px; }
+  li { margin: 3px 0; }
+  code { font-family: 'JetBrains Mono', monospace; font-size: .86em; background: var(--bg-2); padding: 1px 6px; border-radius: 5px; color: var(--accent-2); }
+  pre { background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; font-size: .85rem; }
+  pre code { background: none; padding: 0; }
+  .intuition {
+    border-left: 3px solid var(--accent); background: rgba(77, 163, 255, .07);
+    padding: 8px 14px; border-radius: 0 8px 8px 0; margin: 10px 0;
+  }
+  .intuition b:first-child { color: var(--accent-2); }
+  .warn { border-left-color: var(--warn); background: rgba(255, 197, 107, .07); }
+  .warn b:first-child { color: var(--warn); }
+  details.check {
+    margin: 14px 0 4px; border: 1px solid #2b5a45; background: rgba(95, 211, 166, .06);
+    border-radius: 10px; padding: 10px 14px;
+  }
+  details.check summary { cursor: pointer; color: var(--good); font-weight: 600; list-style: none; }
+  details.check summary::before { content: "✎ Check yourself: "; }
+  details.check[open] summary { margin-bottom: 6px; }
+  details.check .ans { color: var(--text); border-top: 1px dashed #2b5a45; padding-top: 8px; }
+  details.check .ans::before { content: "Answer — try first, then compare"; display: block; font-size: .75rem; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  table { border-collapse: collapse; margin: 10px 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--line); padding: 5px 12px; text-align: center; }
+  th { background: var(--panel-2); color: var(--accent-2); font-weight: 600; }
+  .scroll { overflow-x: auto; }
+  .toc { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
+  .toc a { color: var(--muted); text-decoration: none; font-size: .8rem; border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
+  .toc a:hover { color: var(--text); border-color: var(--accent); }
+  mjx-container[display="true"] { overflow-x: auto; overflow-y: hidden; padding: 2px 0; }
+  @media (max-width: 600px) {
+    .msg.ai .bubble { padding: 4px 14px 14px; }
+    .msg.user .bubble { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand"><h1>Statistiske Modeller · Tutor</h1><span>Lecture 11 — Log-lineære modeller</span></div>
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-target="c1">1 · Log-linear models (slides 11)</button>
+      <button class="tab" data-target="qa">Q &amp; A</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+<!-- ===================== CONVERSATION 1 ===================== -->
+<section class="conv active" id="c1">
+
+  <div class="msg user">
+    <div class="who">You</div>
+    <div class="bubble">Read the slides (11-LogLinMultinom) and write short texts that explain the content in more understandable terms.</div>
+  </div>
+
+  <div class="msg ai">
+    <div class="who">Tutor</div>
+    <div class="bubble">
+      <p>Here's the lecture rebuilt as one story in 9 steps. Each step has the idea in plain words, the one or two formulas you need, and a <b style="color:var(--good)">Check yourself</b> question. Answer those before you open them. Trying to recall something, even if you get it wrong, makes it stick much better than reading it again.</p>
+      <div class="toc">
+        <a href="#s1">1 Big picture</a><a href="#s2">2 Tables</a><a href="#s3">3 Poisson trick</a><a href="#s4">4 Log-linear model</a><a href="#s5">5 Rats &amp; χ²</a><a href="#s6">6 Independence</a><a href="#s7">7 Cond. independence</a><a href="#s8">8 Interactions = OR</a><a href="#s9">9 Graphs &amp; logistic</a>
+      </div>
+
+      <!-- 1 -->
+      <div class="sec" id="s1">
+        <h2><span class="num">1</span>The big picture</h2>
+        <p>You have <b>categorical variables</b> (vaccinations, influenza yes/no, postal code, house type…) and you count how many people fall into each combination. That gives a <b>contingency table</b>. The question is always the same: <i>how are these variables related?</i> Are they independent? Independent once we control for a third variable? Does the association change across groups?</p>
+        <div class="intuition"><b>Core idea:</b> treat every cell count as a Poisson-distributed response $Y_i$, and model $\log E(Y_i)$ linearly with the variables as factors. That's an ordinary Poisson GLM (<code>glm(Freq ~ ..., family = poisson)</code>). Each question about relationships turns into "which interaction terms do I need?"</div>
+      </div>
+
+      <!-- 2 -->
+      <div class="sec" id="s2">
+        <h2><span class="num">2</span>Tables and the multinomial distribution</h2>
+        <p>Notation for a two-way table (X with $I$ rows, Z with $J$ columns):</p>
+        <ul>
+          <li>$Y_{ij}$ = observed count in cell $(i,j)$</li>
+          <li>$\pi_{ij} = P(X=i, Z=j)$ = cell probability</li>
+          <li>$\lambda_{ij} = E(Y_{ij})$ = expected count. With fixed total $n$: $\lambda_{ij} = n\pi_{ij}$</li>
+          <li>A dot means "sum over that index": $Y_{i\cdot} = \sum_j Y_{ij}$ (row total), $Y_{\cdot j}$ (column total)</li>
+        </ul>
+        <p>If we sample a fixed number $n$ of people and drop each into a cell, the whole vector of counts is <b>multinomial</b>:</p>
+        $$P(Y_1=y_1,\dots,Y_K=y_K)=\frac{n!}{y_1!\cdots y_K!}\prod_{i=1}^K \pi_i^{y_i},\qquad E(Y_i)=n\pi_i .$$
+        <div class="intuition"><b>Think of it as:</b> the multinomial is the binomial with more than two outcomes. The counts are <i>not</i> independent, because they must add up to $n$. If one cell gets more, another gets less.</div>
+        <p>In R, a table becomes a data frame with one row per cell and a <code>Freq</code> column (<code>as.data.frame(tbl)</code>). That's the format the GLM needs.</p>
+        <details class="check"><summary>A 3-way table has variables with 2, 3 and 2 levels. How many rows does <code>as.data.frame(tbl)</code> have?</summary>
+          <div class="ans">$K = 2\cdot 3\cdot 2 = 12$ rows, one per cell. That's the Boliga example: sold within 90 days (2) × postal code (3) × house type (2).</div>
+        </details>
+      </div>
+
+      <!-- 3 -->
+      <div class="sec" id="s3">
+        <h2><span class="num">3</span>The Poisson trick</h2>
+        <p>This is the most important argument in the lecture, so we go slowly. Keep one question in mind the whole way: <i>"why am I allowed to fit a Poisson model when my data are really multinomial?"</i> By the end you should be able to answer it in two sentences.</p>
+
+        <h3>3.1 Why we need a trick</h3>
+        <p>The real data model is multinomial: $n$ is fixed, and the counts share it out between the cells. A log-linear model for the probabilities has to look like this:</p>
+        $$\pi_i=\frac{e^{x_i'\beta}}{\sum_{j=1}^K e^{x_j'\beta}}.$$
+        <p>Because of the denominator, which forces $\sum\pi_i=1$, <b>every</b> $\pi_i$ depends on <b>every</b> $\beta$. The likelihood is messy, and R's <code>glm()</code> has no multinomial family. The Poisson model has none of this: independent cells, each with its own $\lambda_i=e^{\beta_0+x_i'\beta}$, and no constraint. It's an ordinary GLM.</p>
+        <div class="intuition"><b>Goal:</b> fit the easy Poisson model, and <i>prove</i> it gives the same estimates and tests as the hard multinomial model.</div>
+
+        <h3>3.2 Building block 1: a sum of independent Poissons is Poisson</h3>
+        $$Y_i\sim\text{Poisson}(\lambda_i)\text{ independent}\quad\Longrightarrow\quad N=Y_1+\dots+Y_K\sim\text{Poisson}(\lambda_\cdot),\qquad\lambda_\cdot=\lambda_1+\dots+\lambda_K .$$
+        <p>Intuitively, if calls arrive on $K$ independent phone lines, the total number of calls is also a "random arrivals" count, with the rates added up. The important part for us: <b>the distribution of $N$ depends only on $\lambda_\cdot$</b>, not on how the rate is split between the cells.</p>
+
+        <h3>3.3 Building block 2: given the total, the counts are multinomial</h3>
+        <p>Take numbers $y_1,\dots,y_K$ with $\sum y_i=n$. By the definition of conditional probability:</p>
+        $$P(Y=y\mid N=n)=\frac{P(Y=y,\;N=n)}{P(N=n)}=\frac{P(Y=y)}{P(N=n)} .$$
+        <p>The numerator doesn't need "$N=n$" because $N$ is <i>computed from</i> $Y$. If $Y=y$, then automatically $N=\sum y_i=n$. Now insert the Poisson probabilities:</p>
+        $$=\frac{\displaystyle\prod_{i=1}^K\frac{\lambda_i^{y_i}e^{-\lambda_i}}{y_i!}}{\displaystyle\frac{\lambda_\cdot^{\,n}e^{-\lambda_\cdot}}{n!}}
+          =\frac{n!}{y_1!\cdots y_K!}\cdot\frac{\lambda_1^{y_1}\cdots\lambda_K^{y_K}}{\lambda_\cdot^{\,n}}\cdot\underbrace{\frac{e^{-(\lambda_1+\dots+\lambda_K)}}{e^{-\lambda_\cdot}}}_{=1}.$$
+        <p>Since $n=y_1+\dots+y_K$, we can write $\lambda_\cdot^{\,n}=\lambda_\cdot^{y_1}\cdots\lambda_\cdot^{y_K}$ and pair one copy with each factor:</p>
+        $$P(Y=y\mid N=n)=\frac{n!}{y_1!\cdots y_K!}\left(\frac{\lambda_1}{\lambda_\cdot}\right)^{y_1}\cdots\left(\frac{\lambda_K}{\lambda_\cdot}\right)^{y_K}.$$
+        <p>This is the multinomial probability function with $\pi_i=\lambda_i/\lambda_\cdot$. Notice: <b>this conditional distribution depends only on the shares $\lambda_i/\lambda_\cdot$</b>, not on how large the total rate is.</p>
+
+        <h3>3.4 Why the likelihood can be factorised</h3>
+        <p>There are two separate reasons. The first one is always true. The second one is what's special about the Poisson model.</p>
+        <p><b>(a) The split itself is just the multiplication rule, and holds for any distribution.</b> For any events, $P(A\cap B)=P(B)\,P(A\mid B)$. Use $A=\{Y=y\}$ and $B=\{N=n\}$. Since $A\subseteq B$ (as in 3.3), $A\cap B=A$:</p>
+        $$P(Y=y)=P(N=n)\cdot P(Y=y\mid N=n).$$
+        <p>In words, the probability of seeing these exact counts = (probability of this total) × (probability of this split, given the total). That's true for <i>any</i> model of counts. On its own, it gives us nothing.</p>
+        <p><b>(b) What's special about Poisson: each factor depends on its own parameter.</b> From 3.2, $P(N=n)$ depends only on $\lambda_\cdot$. From 3.3, $P(Y=y\mid N=n)$ depends only on $\pi=(\lambda_1/\lambda_\cdot,\dots,\lambda_K/\lambda_\cdot)$. So if we describe the model by $(\lambda_\cdot,\pi)$ instead of $(\lambda_1,\dots,\lambda_K)$, the likelihood is</p>
+        $$L(\lambda_\cdot,\pi)=\underbrace{\frac{\lambda_\cdot^{\,n}e^{-\lambda_\cdot}}{n!}}_{L_1(\lambda_\cdot)\ =\ \text{Poisson for the total}}\times\underbrace{\frac{n!}{\prod_i y_i!}\prod_i\pi_i^{y_i}}_{L_2(\pi)\ =\ \text{multinomial for the split}} .$$
+        <p><b>Is it OK to switch to $(\lambda_\cdot,\pi)$?</b> Yes, because the change is <b>one-to-one</b>. Going forward, $\lambda_\cdot=\sum\lambda_i$ and $\pi_i=\lambda_i/\lambda_\cdot$. Going back, $\lambda_i=\lambda_\cdot\pi_i$. Every vector of rates corresponds to exactly one (total, shares) pair and the other way round. It's the same model with different coordinates, and the maximum is the same point either way (MLEs are invariant under reparametrisation).</p>
+        <p><b>Checking by direct calculation.</b> Put $\lambda_i=\lambda_\cdot\pi_i$ straight into the Poisson likelihood:</p>
+        $$\prod_{i}\frac{(\lambda_\cdot\pi_i)^{y_i}e^{-\lambda_\cdot\pi_i}}{y_i!}
+          =\frac{\lambda_\cdot^{\sum y_i}\;e^{-\lambda_\cdot\sum\pi_i}}{\prod_i y_i!}\prod_i\pi_i^{y_i}
+          =\frac{\lambda_\cdot^{\,n}\,e^{-\lambda_\cdot}}{\prod_i y_i!}\prod_i\pi_i^{y_i}
+          =\frac{\lambda_\cdot^{\,n}e^{-\lambda_\cdot}}{n!}\cdot\frac{n!}{\prod_i y_i!}\prod_i\pi_i^{y_i}.$$
+        <p>Two small facts do all the work. $\sum y_i=n$ collects all the $\lambda_\cdot$'s into $\lambda_\cdot^n$. $\sum\pi_i=1$ collects all the exponentials into $e^{-\lambda_\cdot}$. On the log scale, the product becomes a sum:</p>
+        $$\ell(\lambda_\cdot,\pi)=\underbrace{\big(n\log\lambda_\cdot-\lambda_\cdot\big)}_{\ell_1:\ \text{only }\lambda_\cdot}+\underbrace{\sum_i y_i\log\pi_i}_{\ell_2:\ \text{only }\pi}+\text{const}.$$
+
+        <h3>3.5 Why a factorised likelihood can be maximised piece by piece</h3>
+        <p>Say you want to maximise $f(a)+g(b)$. If <b>any</b> $a$ can be combined with <b>any</b> $b$, the answer is obvious: take the best $a$ for $f$ and the best $b$ for $g$. Proof: for every allowed $(a,b)$,</p>
+        $$f(a)+g(b)\le f(\hat a)+g(\hat b),$$
+        <p>and the pair $(\hat a,\hat b)$ is itself allowed. The last part is the whole point. It requires that the parameter space is a <b>product</b>, $\Theta=\Theta_a\times\Theta_b$. That's the definition of <i>variationsuafhængighed</i> (variation independence).</p>
+        <div class="intuition warn"><b>Factorisation alone is not enough.</b> Suppose the model also required $a=b$. Then $(\hat a,\hat b)$ might not be allowed, and you'd have to compromise between $f$ and $g$. So you need <b>both</b>: (1) the likelihood factorises, <b>and</b> (2) the parameters are variation independent.</div>
+        <p>Another way to see it: the score equations separate. $\partial\ell/\partial\lambda_\cdot$ only involves $\ell_1$, and $\partial\ell/\partial\pi$ only involves $\ell_2$. All the mixed second derivatives are 0, so the Fisher information is <b>block diagonal</b>. The estimates of $\lambda_\cdot$ and $\pi$ don't influence each other, even in their uncertainty.</p>
+        <p>Maximising each piece:</p>
+        <ul>
+          <li>$\ell_1$: $\dfrac{n}{\lambda_\cdot}-1=0\Rightarrow\boxed{\hat\lambda_\cdot=n}$. The fitted total always equals the observed total.</li>
+          <li>$\ell_2$: this <i>is</i> the multinomial log-likelihood, so $\hat\pi$ = the multinomial MLE.</li>
+        </ul>
+        <p>So the Poisson fit gives $\hat\lambda_i=n\hat\pi_i$, and $\hat\pi_i=\hat\lambda_i/n$ is exactly the multinomial answer.</p>
+
+        <h3>3.6 With a log-linear model: why it has to be a <i>free intercept</i></h3>
+        <p>So far the $\lambda_i$'s were completely free. In practice we restrict them with $\log\lambda_i=\beta_0+x_i'\beta$. Does variation independence still hold? Compute total and shares:</p>
+        $$\lambda_i=e^{\beta_0}e^{x_i'\beta}\quad\Longrightarrow\quad
+          \pi_i=\frac{e^{\beta_0}e^{x_i'\beta}}{e^{\beta_0}\sum_j e^{x_j'\beta}}=\frac{e^{x_i'\beta}}{\sum_j e^{x_j'\beta}},\qquad
+          \lambda_\cdot=e^{\beta_0}\underbrace{\textstyle\sum_j e^{x_j'\beta}}_{S(\beta)} .$$
+        <ul>
+          <li>$e^{\beta_0}$ <b>cancels</b> in $\pi$, so the shares depend only on $\beta$. That's the multinomial log-linear model with the same $\beta$.</li>
+          <li>For any $\beta$, choosing $\beta_0=\log c-\log S(\beta)$ gives $\lambda_\cdot=c$ for <b>any</b> $c&gt;0$. So $\beta_0$ controls the total and $\beta$ controls the shares, and every combination is possible.</li>
+        </ul>
+        <p><b>Cleanest version of the argument (profile likelihood).</b> Switch from $(\beta_0,\beta)$ to $(\lambda_\cdot,\beta)$, which is one-to-one. Then</p>
+        $$L(\lambda_\cdot,\beta)=L_1(\lambda_\cdot)\cdot L_{\text{multinom}}\big(\pi(\beta)\big),\qquad\lambda_\cdot\in(0,\infty)\text{ for every }\beta .$$
+        <p>For every fixed $\beta$, the best $\lambda_\cdot$ is $n$, whatever $\beta$ is. Plug that in:</p>
+        $$\max_{\lambda_\cdot}L(\lambda_\cdot,\beta)=\underbrace{L_1(n)}_{\text{constant}}\cdot L_{\text{multinom}}\big(\pi(\beta)\big).$$
+        <p>So the Poisson profile likelihood for $\beta$ is the multinomial likelihood times a constant. Same maximiser $\hat\beta$, same curvature (standard errors), same likelihood ratios.</p>
+        <div class="intuition warn"><b>Without an intercept, it breaks.</b> Three cells, $\log\lambda_i=\beta x_i$ with $x=(0,1,2)$ and no intercept:
+          $$\lambda_\cdot=1+e^{\beta}+e^{2\beta},\qquad \pi=\frac{(1,\,e^\beta,\,e^{2\beta})}{1+e^\beta+e^{2\beta}}.$$
+          One parameter controls <i>both</i> the total and the shares, so the parameter space is not a product. Getting $\lambda_\cdot=n$ pulls $\beta$ one way, the best split pulls it another. The Poisson MLE settles on a compromise, and its $\hat\pi$ is <b>not</b> the multinomial MLE.</div>
+        <p><b>Technical point:</b> "free intercept" really means that the <b>constant vector $(1,\dots,1)$ lies in the column space of the design matrix</b>. <code>~ door - 1</code> is fine too, because the three door dummies add up to the constant column. It also shows up in the score equation for $\beta_0$: $\sum_i(y_i-\hat\lambda_i)=0$, i.e. $\hat\lambda_\cdot=n$.</p>
+
+        <h3>3.7 The tests are identical too, and an example</h3>
+        <p>A likelihood ratio test compares $\ell$ under $H_0$ and $H_1$. Both models have a free intercept, so both have $\hat\lambda_\cdot=n$. The $\ell_1$ piece is <b>the same number</b> in both and cancels in the difference:</p>
+        $$G^2=2\big[\ell_{H_1}-\ell_{H_0}\big]=2\big[\ell_{2,H_1}-\ell_{2,H_0}\big]=\text{multinomial LRT}.$$
+        <p>Rats, $(23,36,31)$, $n=90$:</p>
+        <div class="scroll"><table>
+          <tr><th>Model</th><th>Poisson fit $\hat\lambda$</th><th>$\hat\lambda_\cdot$</th><th>$\hat\pi=\hat\lambda/n$</th><th>Multinomial MLE</th></tr>
+          <tr><td>$H_1$: <code>~ door</code></td><td>(23, 36, 31)</td><td>90</td><td>(.256, .400, .344)</td><td>(23, 36, 31)/90 ✓</td></tr>
+          <tr><td>$H_0$: <code>~ 1</code></td><td>(30, 30, 30)</td><td>90</td><td>(1/3, 1/3, 1/3)</td><td>(1/3, 1/3, 1/3) ✓</td></tr>
+        </table></div>
+
+        <h3>3.8 The same idea, used again later</h3>
+        <p>General rule: <b>every total that is fixed by design needs its own free parameter in the model.</b></p>
+        <ul>
+          <li><b>Homogeneity (fixed row totals $n_i$):</b> each row is its own multinomial and needs its own free $\lambda_{i\cdot}$. That's why the row main effect must always be in the model. It guarantees $\hat\lambda_{i\cdot}=n_i$.</li>
+          <li><b>Logistic regression via log-linear models:</b> for each $(X=i,Z=k)$ the pair (Y=0, Y=1) is a binomial with total $\lambda_{i\cdot k}$. The X:Z term provides those free totals.</li>
+        </ul>
+        <div class="intuition"><b>The two-sentence answer:</b> A Poisson likelihood is always (likelihood for the total) × (multinomial likelihood for the split), because the total depends only on $\lambda_\cdot$ and the split only on $\pi$. With a free intercept, total and split can vary independently, so the two factors are maximised separately, and the Poisson fit gives the multinomial estimates and tests.</div>
+
+        <details class="check"><summary>Why does the factorisation in 3.4(a) give us nothing on its own, and what extra fact do we need?</summary>
+          <div class="ans">$P(Y=y)=P(N=n)P(Y=y\mid N=n)$ holds for every distribution. What's special about Poisson is that the first factor depends only on $\lambda_\cdot$ and the second only on $\pi$. On top of that, we need $\lambda_\cdot$ and $\pi$ to be variation independent, which the free intercept provides.</div>
+        </details>
+        <details class="check"><summary>In 3.3, where exactly did we use that $y_1+\dots+y_K=n$?</summary>
+          <div class="ans">Twice: to drop "$N=n$" from the numerator, and to share $\lambda_\cdot^{\,n}$ out as $\lambda_\cdot^{y_1}\cdots\lambda_\cdot^{y_K}$, which turns each $\lambda_i^{y_i}$ into $(\lambda_i/\lambda_\cdot)^{y_i}$.</div>
+        </details>
+        <details class="check"><summary>You fit a Poisson log-linear model and the fitted values sum to 87, but $n=90$. What's wrong?</summary>
+          <div class="ans">The constant isn't in the column space of the design matrix, i.e. no free intercept. With one, the score equation $\sum(y_i-\hat\lambda_i)=0$ forces $\hat\lambda_\cdot=n$.</div>
+        </details>
+        <details class="check"><summary>A study fixes 200 men and 300 women in advance and records smoker yes/no. Which term must always be in the log-linear model?</summary>
+          <div class="ans">The <b>sex</b> main effect. Each row is its own binomial with a fixed total, so it needs its own free total. That gives $\hat\lambda_{\text{men}\cdot}=200$ and $\hat\lambda_{\text{women}\cdot}=300$.</div>
+        </details>
+      </div>
+
+      <!-- 4 -->
+      <div class="sec" id="s4">
+        <h2><span class="num">4</span>Log-linear models: Poisson vs multinomial version</h2>
+        $$\text{Poisson: }\log\lambda_i=\beta_0+x_i'\beta\qquad\qquad \text{Multinomial: }\log\pi_i=\beta_0^*+x_i'\beta$$
+        <p>Since $\pi_i = \lambda_i/\lambda_\cdot$, taking logs gives $\log\pi_i = (\beta_0-\log\lambda_\cdot) + x_i'\beta$. So:</p>
+        <ul>
+          <li>All the <b>slopes $\beta$ are the same</b> in both versions. These are the parameters we interpret.</li>
+          <li>Only the intercept differs. $\beta_0^* = -\log\sum_i e^{x_i'\beta}$ is just a <b>normalising constant</b> that makes the probabilities sum to 1.</li>
+        </ul>
+        <details class="check"><summary>Is the intercept from <code>glm(..., poisson)</code> interesting for a contingency table?</summary>
+          <div class="ans">Usually not. It only reflects the total sample size, the "how many" part. The information about association sits in the other $\beta$'s, especially the interactions.</div>
+        </details>
+      </div>
+
+      <!-- 5 -->
+      <div class="sec" id="s5">
+        <h2><span class="num">5</span>1-D example: rats, doors, and Pearson's χ²</h2>
+        <p>90 rats choose between 3 doors: counts $(23, 36, 31)$. Is there a preference? $H_0: \pi_1=\pi_2=\pi_3=1/3$.</p>
+        <p>Model with door 1 as reference: $\log\lambda_i = \beta_0+\beta_1 x_{i1}+\beta_2x_{i2}$, so</p>
+        $$\lambda_1=e^{\beta_0},\quad \lambda_2=e^{\beta_0+\beta_1},\quad\lambda_3=e^{\beta_0+\beta_2}\quad\Rightarrow\quad \frac{\lambda_2}{\lambda_1}=e^{\beta_1},\ \frac{\lambda_3}{\lambda_1}=e^{\beta_2}.$$
+        <p>"No preference" is the same as $\beta_1=\beta_2=0$. Under $H_0$, every expected count is $90/3 = 30$.</p>
+        <p><b>Pearson's χ²</b> compares observed and expected counts:</p>
+        $$X^2=\sum_i\frac{(Y_i-e_i)^2}{e_i}=\frac{(23-30)^2+(36-30)^2+(31-30)^2}{30}=2.867,\qquad X^2\overset{as}{\sim}\chi^2_{K-1}=\chi^2_2.$$
+        <div class="intuition"><b>The slides' big derivation, in one sentence:</b> if you do a <b>score test</b> of $\beta_1=\beta_2=0$ in the Poisson model (score $U=X'(y-\lambda)$, information $X'\mathrm{diag}(\lambda)X$, profile out the nuisance $\beta_0$ with the effective information), the algebra collapses to <b>exactly Pearson's $X^2$</b>. So the "old" χ²-test is a score test from likelihood theory.</div>
+        <p>The full model here is <b>saturated</b> (3 parameters, 3 cells). Fitted values equal the data, $\hat\beta_0=\log 23$, $\hat\beta_1=\log(36/23)$, and so on.</p>
+        <details class="check"><summary>Why are there 2 degrees of freedom and not 3?</summary>
+          <div class="ans">3 cells, but the probabilities must sum to 1 (equivalently, the intercept is estimated even under $H_0$). The test restricts $\beta_1,\beta_2$, which is 2 parameters. $2.867$ is well below the 5% critical value of $\chi^2_2$ (5.99), so there's no evidence of a door preference.</div>
+        </details>
+      </div>
+
+      <!-- 6 -->
+      <div class="sec" id="s6">
+        <h2><span class="num">6</span>2-D tables: independence (and homogeneity)</h2>
+        <p>If X and Z are independent, then $\pi_{ij}=\pi_{i\cdot}\pi_{\cdot j}$. Take logs:</p>
+        $$\log\lambda_{ij}=\log n+\log\pi_{i\cdot}+\log\pi_{\cdot j}\;=\;\alpha_i+\gamma_j .$$
+        <div class="intuition"><b>Key translation:</b> independence = <b>additive</b> model = <b>no X:Z interaction</b>. In R you compare <code>Freq ~ X + Z</code> against the saturated <code>Freq ~ X * Z</code>.</div>
+        <p>Under $H_0$ the fitted values are the familiar $\hat\lambda_{ij}=\dfrac{y_{i\cdot}\,y_{\cdot j}}{n}$ (row total × column total / n). Two test statistics:</p>
+        $$G^2 = 2\sum_{ij} y_{ij}\log\frac{y_{ij}}{\hat\lambda_{ij}}\ \ (\text{LRT / deviance}),\qquad X^2=\sum_{ij}\frac{(y_{ij}-\hat\lambda_{ij})^2}{\hat\lambda_{ij}}\ \ (\text{score} = \text{Pearson})$$
+        <p>Both are approximately $\chi^2_{(I-1)(J-1)}$. The df comes from $IJ$ free cells minus $I+J-1$ parameters in the additive model.</p>
+        <h3>Independence vs homogeneity: different question, same test</h3>
+        <ul>
+          <li><b>Independence:</b> sample $n$ people, record both X and Z. Row totals are random.</li>
+          <li><b>Homogeneity:</b> choose $n_i$ people from each group <i>in advance</i> (row totals fixed by design). Ask if the distribution over Z is the same in every group.</li>
+        </ul>
+        <p>The likelihood factorises into a "row totals" part times a "within-row" part, and the row part is maximised identically under $H_0$ and the alternative. So <b>the LRT is identical</b>. In the Poisson model, the row effects make sure $\hat\lambda_{i\cdot}=n_i$. That's why the model must always include the row main effect, even if it's "uninteresting".</p>
+        <details class="check"><summary>Influenza table: 0, 1, 2 vaccinations with rows (24, 289), (9, 100), (13, 565). What's the expected number of flu cases among those with 0 vaccinations under independence?</summary>
+          <div class="ans">$\hat\lambda = \frac{313\cdot 46}{1000} = 14.4$. Observed is 24, much more than expected. Df $=(3-1)(2-1)=2$.</div>
+        </details>
+      </div>
+
+      <!-- 7 -->
+      <div class="sec" id="s7">
+        <h2><span class="num">7</span>3-D tables: conditional independence</h2>
+        <p>$X \perp\!\!\!\perp Z \mid Y$ means: <b>once you know Y, Z tells you nothing extra about X</b>. Formally,</p>
+        $$P(X=x,Z=z\mid Y=y)=P(X=x\mid Y=y)\,P(Z=z\mid Y=y).$$
+        <div class="intuition warn"><b>Watch out:</b> conditional independence does <i>not</i> imply marginal independence. Example: shoe size and reading skill are related in children, but independent given age.</div>
+        <p>General rule for going from intensities to probabilities: <b>normalise $\lambda$ over the relevant cells</b>, e.g. $P(X=i\mid Y=j)=\lambda_{ij\cdot}/\lambda_{\cdot j\cdot}$.</p>
+        <p>Working through the algebra, conditional independence is equivalent to $\lambda_{ijk}=\lambda_{ij\cdot}\lambda_{\cdot jk}/\lambda_{\cdot j\cdot}$. Take logs:</p>
+        $$\log\lambda_{ijk}=f_{XY}(i,j)+f_{YZ}(j,k)\qquad\Longleftrightarrow\qquad X\perp\!\!\!\perp Z\mid Y.$$
+        <p>In R: <code>Freq ~ X*Y + Y*Z</code>. There's <b>no X:Z and no X:Y:Z term</b>. Test it against the saturated model (deviance or <code>sum(resid(fit, "pearson")^2)</code>), just like in the Boliga example.</p>
+        <details class="check"><summary>In <code>Freq ~ Sold*Postal + Postal*Type</code>, which conditional independence is assumed?</summary>
+          <div class="ans">Postal code is the shared variable, so: Sold $\perp\!\!\!\perp$ Type $\mid$ Postal. Within each postal code, whether a house sells quickly doesn't depend on house type.</div>
+        </details>
+      </div>
+
+      <!-- 8 -->
+      <div class="sec" id="s8">
+        <h2><span class="num">8</span>What interaction terms actually mean: odds ratios</h2>
+        <p>For binary variables, there's a clean ladder of interpretations:</p>
+        <div class="scroll"><table>
+          <tr><th>Term</th><th>Meaning</th></tr>
+          <tr><td>main effect $\beta^X$</td><td>difference in log-intensity, a log-odds</td></tr>
+          <tr><td>2-way $\beta^{XZ}$</td><td>difference of log-odds = <b>log odds ratio</b></td></tr>
+          <tr><td>3-way $\beta^{XYZ}$</td><td>difference of log odds ratios</td></tr>
+        </table></div>
+        <p>2×2 table, $\log\lambda_{ij}=\beta_0+\beta^X i+\beta^Z j+\beta^{XZ}ij$:</p>
+        $$e^{\beta^{XZ}}=\frac{\lambda_{11}\lambda_{00}}{\lambda_{10}\lambda_{01}}=\text{OR}\qquad(\beta^{XZ}=0\iff \text{OR}=1\iff\text{independence}).$$
+        <p>2×2×2 table (saturated): the X–Z odds ratio <i>within</i> layer $Y=j$ is</p>
+        $$\log\text{OR}_{XZ\mid Y=j}=\beta^{XZ}+\beta^{XYZ}j .$$
+        <div class="intuition"><b>Two restrictions that are easy to confuse:</b>
+          <ul>
+            <li>$\beta^{XYZ}=0$: the odds ratio is the <b>same</b> in both layers, but can be ≠ 1 (association, just constant).</li>
+            <li>$\beta^{XZ}=\beta^{XYZ}=0$: the odds ratio is <b>1</b> in both layers, which is conditional independence.</li>
+          </ul>
+          "No three-way interaction" is the <i>weaker</i> assumption.</div>
+        <details class="check"><summary>A fitted 2×2 log-linear model gives $\hat\beta^{XZ}=0.69$. Explain it to a non-statistician.</summary>
+          <div class="ans">$e^{0.69}\approx 2$: the odds of X=1 are about twice as high when Z=1 as when Z=0. So X and Z are positively associated.</div>
+        </details>
+      </div>
+
+      <!-- 9 -->
+      <div class="sec" id="s9">
+        <h2><span class="num">9</span>Graphical models, and the link to logistic regression</h2>
+        <h3>Graphs</h3>
+        <p>Draw one node per variable. <b>Missing edge = conditional independence.</b> The model gets one term per <b>maximal clique</b> (group of nodes that are all connected to each other):</p>
+        $$\log\lambda_{\mathbf i}=\sum_{C\in\mathcal C(G)} f_C(\mathbf i_C).$$
+        <p>Example X — Y — Z: cliques $\{X,Y\},\{Y,Z\}$ give $f_{XY}+f_{YZ}$, which is $X\perp\!\!\!\perp Z\mid Y$. Example with A, B, C fully connected, C—D, D—E: $f_{ABC}+f_{CD}+f_{DE}$.</p>
+        <div class="intuition warn"><b>Not every log-linear model is graphical.</b> "All two-way interactions, no three-way" (<code>X*Y + X*Z + Y*Z</code>) has a triangle graph. But the triangle is a clique $\{X,Y,Z\}$, and the graphical model would then include the 3-way term too.</div>
+        <h3>From log-linear to logistic regression</h3>
+        <p>Let Y be binary. Within a fixed (X=i, Z=k):</p>
+        $$\operatorname{logit}P(Y=1\mid X=i,Z=k)=\log\lambda_{i1k}-\log\lambda_{i0k}.$$
+        <p>Take the model with all two-way interactions and subtract. Every term without Y cancels:</p>
+        $$\operatorname{logit}(p_{ik})=\gamma_0+\gamma^X_i+\gamma^Z_k .$$
+        <div class="intuition"><b>Takeaway:</b> the log-linear model <code>X*Y + X*Z + Y*Z</code> gives <b>the same estimates</b> as the logistic regression <code>Y ~ X + Z</code>. The X:Z term plays the role of the "free intercept" for each (i,k) combination. It's the Poisson trick again, this time Poisson → binomial. Rule of thumb: <b>Y-terms in the log-linear model become the logistic model's terms, minus the Y.</b></div>
+        <details class="check"><summary>Which log-linear model matches the logistic regression <code>Y ~ X * Z</code> (with X:Z interaction)?</summary>
+          <div class="ans">You need a Y:X:Z term (which becomes the X:Z term after dropping Y), plus X*Z for the free totals. That's the saturated model <code>Freq ~ X*Y*Z</code>.</div>
+        </details>
+      </div>
+
+      <div class="sec">
+        <h2>Summary</h2>
+        <ul>
+          <li>Counts in a table → Poisson GLM on $\log\lambda$. The Poisson trick guarantees the same answers as the multinomial model, as long as there's a free intercept (and free row totals when they're fixed by design).</li>
+          <li>Association hypotheses = removing interaction terms. Test with deviance ($G^2$) or Pearson ($X^2$, which is a score test).</li>
+          <li>Independence ⇔ no 2-way term. Conditional independence ⇔ no terms linking X and Z. Interactions are (log) odds ratios.</li>
+        </ul>
+        <p><b>Next step:</b> Try the 9 check questions from memory, without scrolling up. Then tell me which ones felt shaky and we'll work through those, for example by running the influenza or Boliga example in R step by step.</p>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ===================== Q&A ===================== -->
+<section class="conv" id="qa">
+
+  <div class="msg user">
+    <div class="who">You</div>
+    <div class="bubble">Why is $P(Y=y,\,N=n)=P(Y=y)$? (Section 3.3: $P(Y=y\mid N=n)=\frac{P(Y=y,\,N=n)}{P(N=n)}=\frac{P(Y=y)}{P(N=n)}$.) Explain it very concretely with set notation.</div>
+  </div>
+
+  <div class="msg ai">
+    <div class="who">Tutor</div>
+    <div class="bubble">
+      <p><b>Short version:</b> the event "$Y=y$" is a <i>subset</i> of the event "$N=n$". When one set lies inside another, their intersection is just the smaller set. Below, step by step.</p>
+
+      <div class="sec">
+        <h2><span class="num">1</span>A comma means "and" means intersection</h2>
+        <p>Every probability is a probability <b>of a set of outcomes</b> (an event). Name the two events:</p>
+        $$A=\{Y=y\}=\{\text{outcomes where the count vector is exactly }y\},\qquad B=\{N=n\}=\{\text{outcomes where the total is }n\}.$$
+        <p>The comma in $P(Y=y,\,N=n)$ means "both happen", which is the intersection:</p>
+        $$P(Y=y,\,N=n)=P(A\cap B).$$
+        <p>So the question is really: <b>why is $A\cap B=A$?</b></p>
+      </div>
+
+      <div class="sec">
+        <h2><span class="num">2</span>A tiny concrete example</h2>
+        <p>Take $K=2$ cells, observed counts $y=(2,1)$, so $n=2+1=3$. An outcome is a pair $(Y_1,Y_2)$ of counts. Let's list the sets explicitly:</p>
+        $$A=\{Y=(2,1)\}=\{(2,1)\}$$
+        $$B=\{N=3\}=\{Y_1+Y_2=3\}=\{(0,3),\,(1,2),\,(2,1),\,(3,0)\}$$
+        <p>Now intersect, i.e. keep the outcomes that are in <i>both</i> sets:</p>
+        $$A\cap B=\{(2,1)\}\cap\{(0,3),(1,2),(2,1),(3,0)\}=\{(2,1)\}=A .$$
+        <svg viewBox="0 0 470 310" role="img" aria-label="Grid of outcomes (Y1,Y2); diagonal Y1+Y2=3 highlighted as event B, point (2,1) as event A" style="width:100%;max-width:520px;display:block;margin:12px auto;font:13px Inter,sans-serif;fill:var(--muted)">
+  <line x1="36" y1="104" x2="208" y2="276" stroke="var(--accent)" stroke-width="26" stroke-linecap="round" opacity=".16"/>
+  <circle cx="50" cy="262" r="4" fill="var(--muted)" opacity=".55"/><circle cx="50" cy="214" r="4" fill="var(--muted)" opacity=".55"/><circle cx="50" cy="166" r="4" fill="var(--muted)" opacity=".55"/><circle cx="50" cy="118" r="7" fill="var(--accent)"/><circle cx="50" cy="70" r="4" fill="var(--muted)" opacity=".55"/><circle cx="98" cy="262" r="4" fill="var(--muted)" opacity=".55"/><circle cx="98" cy="214" r="4" fill="var(--muted)" opacity=".55"/><circle cx="98" cy="166" r="7" fill="var(--accent)"/><circle cx="98" cy="118" r="4" fill="var(--muted)" opacity=".55"/><circle cx="98" cy="70" r="4" fill="var(--muted)" opacity=".55"/><circle cx="146" cy="262" r="4" fill="var(--muted)" opacity=".55"/><circle cx="146" cy="214" r="13" fill="none" stroke="var(--warn)" stroke-width="3"/><circle cx="146" cy="214" r="7" fill="var(--warn)"/><circle cx="146" cy="166" r="4" fill="var(--muted)" opacity=".55"/><circle cx="146" cy="118" r="4" fill="var(--muted)" opacity=".55"/><circle cx="146" cy="70" r="4" fill="var(--muted)" opacity=".55"/><circle cx="194" cy="262" r="7" fill="var(--accent)"/><circle cx="194" cy="214" r="4" fill="var(--muted)" opacity=".55"/><circle cx="194" cy="166" r="4" fill="var(--muted)" opacity=".55"/><circle cx="194" cy="118" r="4" fill="var(--muted)" opacity=".55"/><circle cx="194" cy="70" r="4" fill="var(--muted)" opacity=".55"/><circle cx="242" cy="262" r="4" fill="var(--muted)" opacity=".55"/><circle cx="242" cy="214" r="4" fill="var(--muted)" opacity=".55"/><circle cx="242" cy="166" r="4" fill="var(--muted)" opacity=".55"/><circle cx="242" cy="118" r="4" fill="var(--muted)" opacity=".55"/><circle cx="242" cy="70" r="4" fill="var(--muted)" opacity=".55"/>
+  <text x="50" y="288" text-anchor="middle">0</text><text x="98" y="288" text-anchor="middle">1</text><text x="146" y="288" text-anchor="middle">2</text><text x="194" y="288" text-anchor="middle">3</text><text x="242" y="288" text-anchor="middle">4</text><text x="26" y="267" text-anchor="middle">0</text><text x="26" y="219" text-anchor="middle">1</text><text x="26" y="171" text-anchor="middle">2</text><text x="26" y="123" text-anchor="middle">3</text><text x="26" y="75" text-anchor="middle">4</text>
+  <text x="146" y="328" text-anchor="middle" style="fill:var(--text)">Y₁ (count in cell 1)</text>
+  <text x="14" y="166" text-anchor="middle" transform="rotate(-90 14 166)" style="fill:var(--text)">Y₂ (count in cell 2)</text>
+  <circle cx="300" cy="70" r="7" fill="var(--accent)"/><text x="316" y="75" style="fill:var(--text)">B = {N = 3}: 4 outcomes</text>
+  <circle cx="300" cy="102" r="7" fill="var(--warn)"/><text x="316" y="107" style="fill:var(--text)">A = {Y = (2,1)}: 1 outcome</text>
+  <circle cx="300" cy="134" r="4" fill="var(--muted)" opacity=".55"/><text x="316" y="139">other outcomes</text>
+  <text x="300" y="180" style="fill:var(--text)">A lies inside B,</text>
+  <text x="300" y="200" style="fill:var(--text)">so A ∩ B = A</text>
+</svg>
+        <p>The picture shows every possible outcome as a dot. $B$ is the diagonal where $Y_1+Y_2=3$. $A$ is the single orange dot, and it lies <b>on</b> the diagonal. Asking "is it in $A$ and in $B$?" picks out the same dot as just asking "is it in $A$?"</p>
+      </div>
+
+      <div class="sec">
+        <h2><span class="num">3</span>The general argument: $A\subseteq B$</h2>
+        <p>The key is that $N$ is not a new random variable. It is <b>calculated from $Y$</b>: $N=Y_1+\dots+Y_K$. So:</p>
+        <p style="padding-left:14px">Take any outcome in $A$. There, $Y_1=y_1,\dots,Y_K=y_K$.<br>
+        So for that outcome $N=Y_1+\dots+Y_K=y_1+\dots+y_K=n$.<br>
+        So the outcome is also in $B$.</p>
+        <p>Every element of $A$ is in $B$, which means $A\subseteq B$. A basic set rule:</p>
+        $$A\subseteq B\quad\Longrightarrow\quad A\cap B=A\quad\Longrightarrow\quad P(A\cap B)=P(A).$$
+        <p>That's exactly $P(Y=y,\,N=n)=P(Y=y)$.</p>
+        <div class="intuition"><b>In everyday terms:</b> "I rolled a 4 <i>and</i> I rolled an even number" is the same event as "I rolled a 4", because 4 is already even. Adding "and even" filters out nothing. In the same way, adding "and the total is $n$" to "the counts are exactly $y$" filters out nothing: if you know every count, you already know the total.</div>
+      </div>
+
+      <div class="sec">
+        <h2><span class="num">4</span>Why the slides require $\sum y_i=n$</h2>
+        <p>The argument used $y_1+\dots+y_K=n$. What if that fails? Take $y=(2,2)$ but $n=3$:</p>
+        $$A=\{(2,2)\},\qquad B=\{(0,3),(1,2),(2,1),(3,0)\},\qquad A\cap B=\varnothing .$$
+        <p>Then $A$ and $B$ don't overlap, and $P(Y=y\mid N=n)=0$. That's obviously right: if the total is 3, the counts can't be $(2,2)$. So the formula is only interesting when $\sum y_i=n$, which is why the slides assume it.</p>
+      </div>
+
+      <div class="sec">
+        <h2>Putting it back into the formula</h2>
+        $$P(Y=y\mid N=n)=\frac{P(A\cap B)}{P(B)}=\frac{P(A)}{P(B)}=\frac{P(Y=y)}{P(N=n)} .$$
+        <p>The numerator is now just a product of independent Poisson probabilities, which we can write down. In the example, conditioning on $N=3$ means "zoom in on the blue diagonal and rescale so its probabilities sum to 1". The conditional probability of $(2,1)$ is that dot's share of the diagonal's total probability.</p>
+        <details class="check"><summary>With $K=3$ cells and $n=2$: list $B=\{N=2\}$. Is $A=\{Y=(1,0,1)\}$ a subset of $B$? What is $A\cap B$?</summary>
+          <div class="ans">$B=\{(2,0,0),(0,2,0),(0,0,2),(1,1,0),(1,0,1),(0,1,1)\}$, which has 6 outcomes. $(1,0,1)$ sums to 2, so it's in $B$. That means $A\subseteq B$ and $A\cap B=A=\{(1,0,1)\}$.</div>
+        </details>
+        <details class="check"><summary>Is it also true that $P(N=n,\,Y=y)=P(N=n)$? Why or why not?</summary>
+          <div class="ans">No. It would need $B\subseteq A$, but $B$ contains many outcomes besides $y$ (e.g. $(0,3)$). Knowing the total doesn't tell you the individual counts. The information only flows one way: $Y$ determines $N$, not the other way round.</div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="msg user">
+    <div class="who">You</div>
+    <div class="bubble">UCBAdmissions: if the goal is to find all the odds ratios (as in A1), is my code valid? And how can the odds ratio in A1 (all departments together) be higher than every single department's odds ratio?</div>
+  </div>
+
+  <div class="msg ai">
+    <div class="who">Tutor</div>
+    <div class="bubble">
+      <p>I ran your code. Mostly yes, it's valid, with <b>one real bug</b> in A4. The second question is the famous <b>Simpson's paradox</b>, and it connects directly to the lecture's warning that <i>conditional</i> and <i>marginal</i> association are different things.</p>
+
+      <div class="sec">
+        <h2><span class="num">1</span>Is the code valid?</h2>
+        <div class="scroll"><table>
+          <tr><th>Part</th><th>Verdict</th><th>Comment</th></tr>
+          <tr><td>A1: marginal OR</td><td style="color:var(--good)">✓ correct</td><td style="text-align:left">Gives $\widehat{OR}=1.84$. The step <code>pi_AG &lt;- lambda_AG/sum(...)</code> isn't needed, since $n$ cancels in an odds ratio, but it doesn't hurt.</td></tr>
+          <tr><td>A1: LRT</td><td style="color:var(--good)">✓ correct</td><td style="text-align:left"><code>Admit + Gender + Admit*Gender</code> is the same as <code>Admit*Gender</code> (redundant but fine). Check: <code>exp(coef(fit_veksel)[4])</code> = 1.84. The interaction <i>is</i> the log OR (section 8).</td></tr>
+          <tr><td>A2</td><td style="color:var(--good)">✓</td><td style="text-align:left">The three lines are the same model. Keep just <code>Admit*Dept + Gender*Dept</code>.</td></tr>
+          <tr><td>A4: <code>glm(...)</code></td><td style="color:var(--warn)">✗ bug</td><td style="text-align:left"><b><code>family = poisson</code> is missing</b> in both models. Then <code>glm</code> fits a <i>gaussian</i> linear model on the counts, and the "LRT" is meaningless. Add <code>family = poisson</code> to both.</td></tr>
+          <tr><td>A4: the loop</td><td style="color:var(--good)">✓ correct</td><td style="text-align:left">Computes the empirical OR within each department. These equal the ORs from the saturated model.</td></tr>
+        </table></div>
+<pre><code>fit_all_veksel &lt;- glm(Freq ~ Admit*Dept + Gender*Dept + Admit*Gender, data = ucb, family = poisson)
+fit_saturated  &lt;- glm(Freq ~ Admit*Dept*Gender,                     data = ucb, family = poisson)
+anova(fit_all_veksel, fit_saturated, test = "LRT")   # deviance 20.20 on 5 df, p = 0.001
+
+# same per-department ORs, shorter:
+apply(tbl, 3, function(t) (t[1,1]/t[2,1]) / (t[1,2]/t[2,2]))</code></pre>
+        <p>With the fix, the three-way interaction is significant (p = 0.001). In the language of section 8, the Admit–Gender OR is <b>not the same across departments</b>. So the right answer to "find all the odds ratios" is the six department-specific ORs, not one common OR. (For comparison, the common OR from the no-three-way model is $e^{\hat\beta}=0.905$, but that model is rejected.)</p>
+        <p>The numbers (OR = odds of admission, men vs women):</p>
+        <div class="scroll"><table>
+          <tr><th></th><th>All</th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th></tr>
+          <tr><td>OR</td><td><b>1.84</b></td><td>0.35</td><td>0.80</td><td>1.13</td><td>0.92</td><td>1.22</td><td>0.83</td></tr>
+        </table></div>
+        <p>So yes: the overall OR (1.84) is higher than every single department's OR (the highest is 1.22). Four of the six departments are even <b>below</b> 1, i.e. in favour of women.</p>
+      </div>
+
+      <div class="sec">
+        <h2><span class="num">2</span>How can that happen? Simpson's paradox</h2>
+        <p>Before reading on, try to guess: what would have to be true about <i>where</i> men and women apply for this to happen?</p>
+        <p>Here are the facts per department:</p>
+        <div class="scroll"><table>
+          <tr><th>Dept</th><th>Admission rate (all)</th><th>Men applying</th><th>Women applying</th><th>Admit % men</th><th>Admit % women</th></tr>
+          <tr><td>A</td><td>64%</td><td>825</td><td>108</td><td>62%</td><td>82%</td></tr>
+          <tr><td>B</td><td>63%</td><td>560</td><td>25</td><td>63%</td><td>68%</td></tr>
+          <tr><td>C</td><td>35%</td><td>325</td><td>593</td><td>37%</td><td>34%</td></tr>
+          <tr><td>D</td><td>34%</td><td>417</td><td>375</td><td>33%</td><td>35%</td></tr>
+          <tr><td>E</td><td>25%</td><td>191</td><td>393</td><td>28%</td><td>24%</td></tr>
+          <tr><td>F</td><td>6%</td><td>373</td><td>341</td><td>6%</td><td>7%</td></tr>
+        </table></div>
+        <p>Two things happen at once:</p>
+        <ul>
+          <li><b>Department strongly affects admission.</b> A and B admit about 63%, F only 6%.</li>
+          <li><b>Department is strongly related to gender.</b> 51% of the men (1385 of 2691) applied to the easy departments A and B. Only 7% of the women did (133 of 1835). 93% of the women applied to the hard ones, C–F.</li>
+        </ul>
+        <p>When you add the departments together (<code>margin.table</code>), you compare men who mostly applied to easy departments with women who mostly applied to hard ones. The overall OR then measures <b>"which departments did people apply to"</b> much more than "are men and women treated differently". Department is a <b>confounder</b>.</p>
+        <div class="intuition"><b>Analogy:</b> Surgeon X has a better success rate than surgeon Y for both easy and hard operations. But X takes almost only the hard cases, so X's <i>overall</i> success rate is lower. The overall number mixes up "how skilled" with "which cases".</div>
+      </div>
+
+      <div class="sec">
+        <h2><span class="num">3</span>Why the math allows it</h2>
+        <p>Your intuition was probably: "the overall OR must be some kind of average of the department ORs, so it can't lie outside their range." That's <b>false</b> for odds ratios. Summing over Dept doesn't average the ORs. It mixes the counts:</p>
+        $$\lambda_{ag\cdot}=\sum_{d}\lambda_{agd},\qquad OR_{\text{marginal}}=\frac{\lambda_{\text{adm},M,\cdot}\;\lambda_{\text{rej},F,\cdot}}{\lambda_{\text{rej},M,\cdot}\;\lambda_{\text{adm},F,\cdot}} .$$
+        <p>How much each department weighs in each of the four sums depends on <i>how many men vs women</i> applied there. When those weights differ between men and women, the marginal OR picks up the Dept–Gender and Dept–Admit associations as well.</p>
+        <p><b>When is it safe to sum over Dept (collapsibility)?</b> The marginal Admit–Gender OR equals the conditional ones (when those are all equal) if Dept is conditionally independent of Admit <i>or</i> of Gender, i.e. if the model has no Admit:Dept term or no Gender:Dept term. Here both associations are huge, so collapsing is <b>not</b> allowed.</p>
+        <p><b>Link to the lecture (section 7):</b> "conditional independence does not imply marginal independence". UCB is the classic example. The A2 model <code>Admit*Dept + Gender*Dept</code> says Admit ⊥⊥ Gender | Dept, which fits reasonably (apart from department A). But marginally, Admit and Gender are strongly dependent (OR = 1.84), and the reason is the shared variable Dept, which connects them in the graph Admit — Dept — Gender.</p>
+      </div>
+
+      <div class="sec">
+        <h2>Takeaway for the assignment</h2>
+        <p>Report the marginal OR = 1.84 (A1), but explain that it's <b>misleading</b> about discrimination. Within the departments, the ORs lie around 1 or below (A: 0.35, women clearly favoured). The overall difference comes from women applying to departments with low admission rates.</p>
+        <details class="check"><summary>If men and women had applied in exactly the same proportions to each department, would the paradox still be possible?</summary>
+          <div class="ans">No. Then Dept ⊥⊥ Gender, so there's no Gender:Dept term, and the table is collapsible over Dept. The marginal OR would then reflect the within-department ORs and couldn't flip direction. The paradox needs Dept to be associated with <i>both</i> Gender and Admit.</div>
+        </details>
+        <details class="check"><summary>Which graph matches the model <code>Admit*Dept + Gender*Dept</code>, and which edge is missing?</summary>
+          <div class="ans">Admit — Dept — Gender. The Admit–Gender edge is missing, meaning Admit ⊥⊥ Gender | Dept. Admit and Gender are still connected through Dept, which is why they're associated marginally.</div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="msg user">
+    <div class="who">You</div>
+    <div class="bubble">Does this code look right if we want to compute the <i>fitted</i> odds ratio, like in A1? (Loop with <code>predict(fit_all_veksel, newdata = ...)</code> for each department, sum the four cells over departments, then compute the OR.)</div>
+  </div>
+
+  <div class="msg ai">
+    <div class="who">Tutor</div>
+    <div class="bubble">
+      <p>The idea is right: fit the model, add up the fitted counts over Dept to get a fitted 2×2 table, then compute the OR as in A1. There's <b>one bug</b>, though. Once it's fixed, you'll find that this particular model gives you an answer you already knew. Let's take it in three steps.</p>
+
+      <div class="sec">
+        <h2><span class="num">1</span>The bug: <code>predict()</code> returns $\log\hat\lambda$ by default</h2>
+        <p>For a GLM, <code>predict()</code> by default returns values on the <b>link scale</b> (<code>type = "link"</code>). With a log link, that's $\log\hat\lambda$, not $\hat\lambda$. So your loop sums <b>logarithms</b> of the fitted counts:</p>
+        $$\sum_d \log\hat\lambda_{agd}\quad\text{instead of}\quad\sum_d\hat\lambda_{agd}.$$
+        <p>I ran it. You get a "table" of about $(28.7,\ 32.9,\ 25.1,\ 28.6)$ and an OR of 0.997, which is meaningless. The cells should add up to $n = 4526$. Fix:</p>
+<pre><code>hat_lambda_temp_11[i] &lt;- predict(fit_all_veksel, newdata = df_temp_11, type = "response")
+# ... same for the other three</code></pre>
+        <div class="intuition warn"><b>Quick sanity check:</b> fitted counts in a Poisson model with an intercept must sum to $n$ (the Poisson trick, section 3.6). If your fitted table doesn't sum to 4526, something is wrong.</div>
+      </div>
+
+      <div class="sec">
+        <h2><span class="num">2</span>After the fix: you get exactly 1.84 again. Why?</h2>
+        <p>With <code>type = "response"</code>, the fitted table is <b>exactly</b> the observed one: (1198, 1493, 557, 1278), so the OR is 1.84. That's not a coincidence.</p>
+        <p>Recall the score equations for a Poisson GLM: $U(\beta)=X'(y-\hat\lambda)=0$. There's one equation per column of the design matrix. <code>fit_all_veksel</code> contains the <code>Admit:Gender</code> term, so (together with the main effects) the design matrix contains indicators for each Admit×Gender combination. The score equation for such a column says:</p>
+        $$\sum_{d}\big(y_{agd}-\hat\lambda_{agd}\big)=0\quad\Longleftrightarrow\quad\underbrace{\hat\lambda_{ag\cdot}}_{\text{fitted margin}}=\underbrace{y_{ag\cdot}}_{\text{observed margin}}.$$
+        <div class="intuition"><b>General rule for log-linear models:</b> <i>every margin that matches a term in the model is fitted exactly.</i> A model with <code>Admit*Gender</code> reproduces the Admit×Gender table perfectly. So its fitted marginal OR is always the observed 1.84. The calculation is valid, it just tells you nothing new.</div>
+        <p>It's the same mechanism as the intercept forcing $\hat\lambda_\cdot = n$, and the row effect forcing $\hat\lambda_{i\cdot}=n_i$ for homogeneity.</p>
+      </div>
+
+      <div class="sec">
+        <h2><span class="num">3</span>Which fitted ORs are actually interesting?</h2>
+        <div class="scroll"><table>
+          <tr><th>Model</th><th>Fitted OR <i>within</i> each dept</th><th>Fitted <i>marginal</i> OR (summed over Dept)</th></tr>
+          <tr><td>A2: <code>Admit*Dept + Gender*Dept</code></td><td>1 (by construction, Admit ⊥⊥ Gender | Dept)</td><td><b>1.96</b></td></tr>
+          <tr><td>A4: <code>... + Admit*Gender</code></td><td><b>0.905</b> in all six (= $e^{\hat\beta_{\text{Admit:Gender}}}$)</td><td>1.84 (= observed, see step 2)</td></tr>
+          <tr><td>Saturated</td><td>the empirical ones (0.35, …, 1.22)</td><td>1.84</td></tr>
+        </table></div>
+        <ul>
+          <li><b>A2 is the interesting one for the marginal OR.</b> The model says "no gender effect within any department", yet the fitted marginal OR is 1.96, close to the observed 1.84. So <b>Dept alone can explain almost all of the overall gender difference</b>. That's Simpson's paradox in numbers.</li>
+          <li><b>For A4, the interesting fitted OR is the conditional one:</b> 0.905, the same in every department, since the model has no three-way term (section 8). That is: the model's common estimate is that men's admission odds are about 10% <i>lower</i> than women's within a department. Remember, though, that the LRT rejects this model (p = 0.001).</li>
+        </ul>
+        <p>Shorter code for all of it. <code>fitted()</code> gives $\hat\lambda$ directly, so there's no need for <code>predict</code> or loops:</p>
+<pre><code>OR &lt;- function(t) (t[1,1]/t[2,1]) / (t[1,2]/t[2,2])
+
+# fitted 3-way table from a model
+fit_tab &lt;- function(fit) xtabs(fitted(fit) ~ Admit + Gender + Dept, data = ucb)
+
+# fitted marginal OR (summed over Dept)
+OR(margin.table(fit_tab(fit_ucb),        c(1, 2)))   # A2: 1.96
+OR(margin.table(fit_tab(fit_all_veksel), c(1, 2)))   # A4: 1.84 (= observed)
+
+# fitted conditional OR per department
+apply(fit_tab(fit_all_veksel), 3, OR)                # 0.905 in all six
+exp(coef(fit_all_veksel)["AdmitRejected:GenderFemale"])  # same number</code></pre>
+        <details class="check"><summary>Without running anything: which margins does the A2 model <code>Admit*Dept + Gender*Dept</code> reproduce exactly, and which doesn't it?</summary>
+          <div class="ans">It reproduces the Admit×Dept and Gender×Dept tables exactly (and so Admit, Gender and Dept separately, and $n$). It does <b>not</b> reproduce the Admit×Gender table, because there's no Admit:Gender term. That's why its fitted marginal OR (1.96) differs from the observed (1.84).</div>
+        </details>
+        <details class="check"><summary>Why does <code>exp(coef(...)["AdmitRejected:GenderFemale"])</code> give the OR for <i>admission</i> (men vs women), when the coefficient is about rejection and women?</summary>
+          <div class="ans">Flipping both categories at once leaves an odds ratio unchanged: $\frac{\lambda_{RF}\lambda_{AM}}{\lambda_{RM}\lambda_{AF}}=\frac{(\lambda_{AM}/\lambda_{RM})}{(\lambda_{AF}/\lambda_{RF})}$. That's exactly "odds of admission, men divided by women".</div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="msg user">
+    <div class="who">You</div>
+    <div class="bubble">Opgave A4, with the full assignment text and our draft: <i>"Explain how the absence of a three-way interaction can be interpreted using these odds ratios, and discuss whether the assumption of a common odds ratio seems reasonable."</i> (followed by: <i>"Determine the estimated common OR … compare it with the marginal OR from question 1. Discuss the difference between the marginal and conditional association and explain how the difference can arise."</i>) I need a pointer on what the discussion could contain.</div>
+  </div>
+
+  <div class="msg ai">
+    <div class="who">Tutor</div>
+    <div class="bubble">
+      <p>Now that I can see the whole assignment and your draft, here's an updated answer. As before, you get <b>building blocks and guiding questions</b>, not finished text. The assignment says the answer should support you at the oral exam, so the wording has to be yours.</p>
+
+      <div class="sec">
+        <h2><span class="num">0</span>What A4 asks for, and how far you are</h2>
+        <div class="scroll"><table>
+          <tr><th>A4 asks for</th><th>Status in your draft</th></tr>
+          <tr><td style="text-align:left">Fit no-three-way model, LRT vs saturated: $H_0$, test statistic, df, p</td><td style="text-align:left;color:var(--good)">✓ Done. Consider writing $H_0$ in words too ("the A–G odds ratio is the same in all six departments") and briefly explaining why df = 5.</td></tr>
+          <tr><td style="text-align:left">OR per department</td><td style="text-align:left;color:var(--good)">✓ Done (men in the numerator, good). Round to 2–3 decimals.</td></tr>
+          <tr><td style="text-align:left">Interpret "no three-way" via the ORs</td><td style="text-align:left;color:var(--warn)">Missing, see section 1</td></tr>
+          <tr><td style="text-align:left">Discuss whether a common OR is reasonable</td><td style="text-align:left;color:var(--warn)">Missing, see section 2</td></tr>
+          <tr><td style="text-align:left">Estimated common OR, compared with the marginal OR</td><td style="text-align:left;color:var(--warn)">Missing. <b>Note:</b> your <code>fitted_OR</code> in appendix 1 is <i>not</i> the common OR, see section 3</td></tr>
+          <tr><td style="text-align:left">Marginal vs conditional: how does the difference arise?</td><td style="text-align:left;color:var(--warn)">Missing, see section 3</td></tr>
+        </table></div>
+      </div>
+
+      <div class="sec">
+        <h2><span class="num">1</span>Interpretation: what does "no three-way interaction" mean in ORs?</h2>
+        <p><b>Starting point (section 8, tab 1):</b> in your notation, call the three-way term $\psi_{ijk}$. The A–G log odds ratio in department $k$ is then the A:G interaction plus a department-specific addition:</p>
+        $$\log OR_{AG\mid D=k}=\eta+\psi_k\qquad(\eta=\text{the Admit:Gender parameter}).$$
+        <p><b>Guiding questions:</b></p>
+        <ul>
+          <li>What happens to the six ORs when all $\psi_k=0$? So what does $H_0$ in your LRT say, put in terms of odds ratios?</li>
+          <li>Say it in the admissions context: what does a common OR mean for a man and a woman applying to the <i>same</i> department?</li>
+          <li>Your model in question 2 has no Admit:Gender term at all. How does that model differ from the no-three-way model, put in terms of ORs? That contrast shows you understand both.</li>
+        </ul>
+        <div class="intuition warn"><b>Pitfalls to avoid:</b>
+          <ul>
+            <li>"No three-way = Admit and Gender independent." <i>Wrong.</i> That's the question-2 model (OR = 1 in all departments). No three-way only says the ORs are <i>equal</i>, not that they equal 1.</li>
+            <li>"Equal OR = equal admission rates." <i>Wrong.</i> The Admit:Dept term lets the departments have completely different admission rates. Only the <i>relative</i> gender difference, on the odds scale, is constant.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h2><span class="num">2</span>Discussion: is a common OR reasonable?</h2>
+        <p>Look at it from several angles, then give a nuanced conclusion.</p>
+        <h3>(a) The formal test</h3>
+        <p>You've already rejected $H_0$ (p = 0.001). But the test only says "not all six ORs are equal". It doesn't say <i>where</i> the problem is, or whether it's practically important.</p>
+        <h3>(b) The six ORs side by side</h3>
+        <p>Look at your table. Does one department stand out? Are the other five close to each other?</p>
+        <h3>(c) Uncertainty</h3>
+        <p>Some departments have few applicants of one gender (how many women applied to B?). Confidence intervals per department show whether the differences are larger than chance:</p>
+        $$\widehat{\text{se}}\big(\log\widehat{OR}_k\big)=\sqrt{\frac1{y_{11k}}+\frac1{y_{12k}}+\frac1{y_{21k}}+\frac1{y_{22k}}}$$
+<pre><code>apply(tbl, 3, function(t) {
+  l  &lt;- log((t[1,1]*t[2,2]) / (t[2,1]*t[1,2]))
+  se &lt;- sqrt(sum(1/t))
+  exp(c(OR = l, lo = l - 1.96*se, hi = l + 1.96*se))
+})</code></pre>
+        <h3>(d) Sensitivity analysis</h3>
+        <p>If one department drives the rejection: refit both models without it (<code>subset(ucb, Dept != "...")</code> plus <code>droplevels</code>) and test again. Does the conclusion change? What happens to the common OR?</p>
+        <h3>(e) Statistical vs practical significance</h3>
+        <p>With $n = 4526$, the test can detect small deviations. Is it a general pattern, or one department? Is it then fair to summarise with a single OR? (Any explanation of <i>why</i> a department differs can't be tested with these data, so present it as speculation.)</p>
+      </div>
+
+      <div class="sec">
+        <h2><span class="num">3</span>Common OR vs marginal OR</h2>
+        <h3>Getting the common OR right</h3>
+        <p>Your <code>fitted_OR</code> code sums the fitted counts over departments. That gives the fitted <i>marginal</i> OR, which is exactly 1.84 again because the model contains Admit:Gender (see my earlier answer about fitted margins). The <b>common</b> OR is a <i>conditional</i> OR, and you read it straight from the Admit:Gender coefficient:</p>
+<pre><code>exp(coef(fit_all_veksel)["AdmitRejected:GenderFemale"])
+# check: the same number appears in all six departments
+apply(xtabs(fitted(fit_all_veksel) ~ Admit + Gender + Dept, data = ucb), 3,
+      function(t) (t[1,1]/t[2,1]) / (t[1,2]/t[2,2]))</code></pre>
+        <p>Think about it: why does this coefficient give the OR with <i>men</i> in the numerator for <i>admission</i>, when it's named "Rejected" and "Female"? (Answer in my earlier Q&amp;A answer.)</p>
+        <h3>Guiding questions for the comparison</h3>
+        <ul>
+          <li>Which side of 1 is the marginal OR, and which side is the common OR? So who "looks favoured" in each analysis? Give the interpretation of each in words.</li>
+          <li>What exactly is the difference between the two questions? Marginal: "men vs women, all departments mixed together". Conditional: "men vs women <i>within the same department</i>".</li>
+        </ul>
+        <h3>How can the difference arise? Find the mechanism yourself</h3>
+        <p>For the marginal and conditional ORs to differ, Dept has to be related to <b>both</b> of the other variables. Check both in R:</p>
+<pre><code>prop.table(margin.table(tbl, c(1, 3)), 2)   # admission rate per department
+prop.table(margin.table(tbl, c(2, 3)), 2)   # gender split per department</code></pre>
+        <ul>
+          <li>Which departments are "easy" and which are "hard" to get into?</li>
+          <li>Where did the men mainly apply, and where did the women?</li>
+          <li>Put the two together: what happens when you sum over the departments? That's the explanation, called <b>Simpson's paradox</b>, and Dept acts as a <b>confounder</b>.</li>
+        </ul>
+        <p><b>Ways to strengthen the argument:</b></p>
+        <ul>
+          <li><b>Collapsibility:</b> you may only sum over Dept without changing the A–G association if Dept is conditionally independent of Admit <i>or</i> of Gender (no Admit:Dept or no Gender:Dept term). Do your data meet that?</li>
+          <li><b>Link to question 2:</b> the model Admit ⊥⊥ Gender | Dept has <i>no</i> gender effect within any department. What is its fitted <i>marginal</i> OR? (Sum its fitted values over Dept.) If it comes out close to 1.84, you've shown in numbers that Dept alone can explain the marginal association.</li>
+          <li><b>Link to the lecture:</b> "conditional independence does not imply marginal independence" (section 7). The graph Admit — Dept — Gender shows why.</li>
+        </ul>
+      </div>
+
+      <div class="sec">
+        <h2><span class="num">4</span>What I noticed in the rest of your draft</h2>
+        <p>Not something you asked about, but worth fixing before you hand in. Hints only:</p>
+        <ul>
+          <li><b>A1, conclusion:</b> "Der er altså evidens for at antage uafhængighed" ("so there is evidence for assuming independence"). Read it again. With p &lt; 2.2·10⁻¹⁶, what happens to $H_0$, and what was $H_0$? Also: the task asks for the <b>admission rate</b> for men and women (e.g. 1198/2691), which is missing. "LRT = 93.449" would be clearer written as $G^2$ (deviance) with df = 1.</li>
+          <li><b>A2:</b> the task asks you to "angiv en tilsvarende modelformel i R" (state a matching model formula in R). The formula isn't in the text yet. Your parameter count (18) and df (6) are correct.</li>
+          <li><b>A3, the density:</b> should be $\lambda^{y}e^{-\lambda}/y!$ (the exponent $y$ is missing), and the log-likelihood has $\log(y!)$, not $\log(y)$.</li>
+          <li><b>A3, the important one:</b> you differentiate with respect to each $\lambda_{ijk}$ separately and get $\hat\lambda_{ijk}=y_{ijk}$. That's the MLE in the <b>saturated</b> model, not in your model. Your model has only 18 parameters for 24 cells, so the $\lambda$'s aren't free (and you have 6 residual df, so $\hat\lambda\neq y$). Ask yourself:
+            <ul>
+              <li>Which parameters should you differentiate with respect to? (Hint: $\beta$, i.e. $\beta_0,\alpha_i,\gamma_j,\delta_k,\varepsilon_{ik},\zeta_{jk}$.)</li>
+              <li>What does the score equation for, say, $\varepsilon_{ik}$ say? Write it as a sum of $(y-\hat\lambda)$ over the cells where that parameter appears. Which margin do you get?</li>
+              <li>Once you have $\hat\lambda_{i\cdot k}=y_{i\cdot k}$, $\hat\lambda_{\cdot jk}=y_{\cdot jk}$ and $\hat\lambda_{\cdot\cdot k}=y_{\cdot\cdot k}$: how do you finish using your identity (1)? (This is exactly the task's hint.)</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sec">
+        <details class="check"><summary>Write the interpretation sentence for the common OR yourself first, then compare.</summary>
+          <div class="ans">The common OR is ≈ 0.905: within any department, men's odds of admission are estimated to be about 0.9 times women's, i.e. roughly 10% lower, <i>and that factor is the same in all six departments</i>. The departments can still have very different admission rates. Did your sentence include both "within department" and "the same in all"?</div>
+        </details>
+        <details class="check"><summary>Do 2(c) and 2(d) yourself in R before you open this. What did you find?</summary>
+          <div class="ans">Department A's interval (about 0.21–0.58) lies clearly below the common estimate. The other five all contain both 0.905 and 1. Without A, the no-three-way model fits well (deviance ≈ 2.6 on 4 df, p ≈ 0.63). The common OR becomes ≈ 1.03, and even the conditional independence model fits (p ≈ 0.75). So the rejection is driven almost entirely by department A.</div>
+        </details>
+        <details class="check"><summary>What fitted marginal OR does the question-2 model give, and what does that show?</summary>
+          <div class="ans">About 1.96, close to the observed 1.84, even though the model has no gender effect within any department. So department choice alone can explain the marginal difference.</div>
+        </details>
+      </div>
+      <p>Write a draft of the discussion, paste it here, and I'll give you feedback on the reasoning.</p>
+    </div>
+  </div>
+
+</section>
+</main>
+
+<script>
+  document.querySelectorAll('.tab').forEach(function (t) {
+    t.addEventListener('click', function () {
+      document.querySelectorAll('.tab').forEach(function (x) { x.classList.remove('active'); });
+      document.querySelectorAll('.conv').forEach(function (x) { x.classList.remove('active'); });
+      t.classList.add('active');
+      document.getElementById(t.dataset.target).classList.add('active');
+      window.scrollTo(0, 0);
+    });
+  });
+</script>
+</body>
+</html>
